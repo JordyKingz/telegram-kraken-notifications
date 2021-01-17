@@ -16,11 +16,10 @@ class CreateCryptocurrenciesTable extends Migration
         Schema::create('cryptocurrencies', function (Blueprint $table) {
             $table->id();
             $table->string('currency')->unique();
-            $table->decimal('bought_value', $precision = 15, $scale = 4);
-            $table->decimal('sold_value', $precision = 15, $scale = 4);
-            $table->decimal('sell_value', $precision = 15, $scale = 4);
-            $table->decimal('buy_value', $precision = 15, $scale = 4);
-            $table->integer('nonce');
+            $table->decimal('bought_value', $precision = 15, $scale = 4)->nullable();
+            $table->decimal('sold_value', $precision = 15, $scale = 4)->nullable();
+            $table->decimal('sell_value', $precision = 15, $scale = 4)->nullable();
+            $table->decimal('buy_value', $precision = 15, $scale = 4)->nullable();
             $table->timestamps();
         });
     }
