@@ -80,6 +80,5 @@ class BuyCrypto extends Command
                 'text' => $msg
             ]));
         }
-
     }
 }
