@@ -55,19 +55,19 @@ class SellCrypto extends Command
 
         $msg = "";
         // Check if price matched
-        if ((int)$btc >= $this->btcModel->sell_value) {
+        if ((int)$btc >= $this->btcModel->sell_value && $this->btcModel->notify_sell) {
             $sendNotification = true;
             $msg .= "Bitcoin has reached the value of {$btc}. Your sell value is {$this->btcModel->sell_value} Sell now!";
         }
 
         // Check if price matched
-        if ((int)$eth >= $this->ethModel->sell_value) {
+        if ((int)$eth >= $this->ethModel->sell_value && $this->ethModel->notify_sell) {
             $sendNotification = true;
             $msg .= "Ethereum has reached the value of {$eth}. Your sell value is {$this->ethModel->sell_value} Sell now!";
         }
 
         // Check if price matched
-        if ((int)$dot >= $this->dotModel->sell_value) {
+        if ((int)$dot >= $this->dotModel->sell_value && $this->dotModel->notify_sell) {
             $sendNotification = true;
             $msg .= "Pokadot has reached the value of {$dot}. Your sell value is {$this->dotModel->sell_value} Sell now!";
         }

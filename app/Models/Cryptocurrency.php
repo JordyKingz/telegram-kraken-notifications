@@ -16,10 +16,9 @@ class Cryptocurrency extends Model
      */
     protected $fillable = [
         'currency',
-        'bought_value',
-        'sold_value',
         'sell_value',
         'buy_value',
-        'nonce',
+        'notify_sell',
+        'notify_buy',
     ];
 }

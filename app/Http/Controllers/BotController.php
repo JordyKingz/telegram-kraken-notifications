@@ -30,6 +30,7 @@ class BotController extends Controller
         DriverManager::loadDriver(TelegramDriver::class);
         $botman = BotManFactory::create($config);
 
+        // Set buy value
         $botman->hears('Buy {coin} {amount}', function (BotMan $bot, $coin, $amount) {
             if ($coin === $this->btc) {
                 // Bitcoin
@@ -72,10 +73,7 @@ class BotController extends Controller
             $bot->reply("Success! I have set the buy value of {$coin} at {$amount}.");
         });
 
-        /** TODO hears sell
-        * @params $coin, $amount
-        * set value to receive notification when coin has sell value
-        */
+        // Set sell value
         $botman->hears('Sell {coin} {amount}', function (BotMan $bot, $coin, $amount) {
             if ($coin === $this->btc) {
                 // Bitcoin
@@ -118,6 +116,65 @@ class BotController extends Controller
             $bot->reply("Success! I have set the sell value of {$coin} at {$amount}.");
         });
 
+        // Turn of notification coin
+        $botman->hears('Off {status} {coin}', function (BotMan $bot, $status, $coin) {
+            $updateSuccess = false;
+            if ($coin === $this->btc) {
+                // Bitcoin
+                $btc = Cryptocurrency::where('currency', $coin)->first();
+
+                if ($btc != null) {
+                    if ($status === "sell") {
+                        $btc->notify_sell = false;
+                        $btc->save();
+                        $updateSuccess = true;
+                    } else if ($status === "buy") {
+                        $btc->notify_buy = false;
+                        $btc->save();
+                        $updateSuccess = true;
+                    }
+                }
+            } else if ($coin === $this->eth) {
+                // Ethereum
+                $eth = Cryptocurrency::where('currency', $coin)->first();
+                if ($eth != null) {
+                    if ($status === "sell") {
+                        $eth->notify_sell = false;
+                        $eth->save();
+                        $updateSuccess = true;
+                    } else if ($status === "buy") {
+                        $eth->notify_buy = false;
+                        $eth->save();
+                        $updateSuccess = true;
+                    }
+                }
+            } else if ($coin ===  $this->dot) {
+                // Polkadot
+                $dot = Cryptocurrency::where('currency', $coin)->first();
+                if ($dot != null) {
+                    if ($status === "sell") {
+                        $dot->notify_sell = false;
+                        $dot->save();
+                        $updateSuccess = true;
+                    } else if ($status === "buy") {
+                        $dot->notify_buy = false;
+                        $dot->save();
+                        $updateSuccess = true;
+                    }
+                }
+            }
+
+            if ($updateSuccess) {
+                if ($status === "sell") {
+                    $bot->reply("Success! I have turned off selling notifications for {$coin}");
+                } else if ($status === "buy") {
+                    $bot->reply("Success! I have turned off buying notifications for {$coin}");
+                }
+            } else {
+                $bot->reply("Failed! There are no {$coin} records in the db");
+            }
+        });
+
         $botman->listen();
     }
 
@@ -128,11 +185,15 @@ class BotController extends Controller
                 Cryptocurrency::create([
                     'currency' => $coin,
                     'sell_value' => $amount,
+                    'notify' => true,
+                    'notify_buy' => true,
                 ]);
             } else {
                 Cryptocurrency::create([
                     'currency' => $coin,
                     'buy_value' => $amount,
+                    'notify_sell' => true,
+                    'notify_buy' => true,
                 ]);
             }
         }
@@ -152,7 +213,9 @@ class BotController extends Controller
     {
         try {
             $sell ? $model->sell_value = $amount : $model->buy_value = $amount;
-
+            
+            $model->notify_sell = true;
+            $model->notify_buy = true;
             $model->save();
         }
         catch(exception $e) {

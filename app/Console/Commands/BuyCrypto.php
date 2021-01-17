@@ -56,19 +56,19 @@ class BuyCrypto extends Command
 
         $msg = "";
         // Check if price matched
-        if ((int)$btc <= $this->btcModel->buy_value) {
+        if ((int)$btc <= $this->btcModel->buy_value && $this->btcModel->notify_buy) {
             $sendNotification = true;
             $msg .= "Bitcoin has reached the value of {$btc}. Your buy value is {$this->btcModel->buy_value} Buy now!";
         }
 
         // Check if price matched
-        if ((int)$eth <= $this->ethModel->buy_value) {
+        if ((int)$eth <= $this->ethModel->buy_value && $this->ethModel->notify_buy) {
             $sendNotification = true;
             $msg .= "Ethereum has reached the value of {$eth}. Your buy value is {$this->ethModel->buy_value} Buy now!";
         }
 
         // Check if price matched
-        if ((int)$dot <= $this->dotModel->buy_value) {
+        if ((int)$dot <= $this->dotModel->buy_value && $this->dotModel->notify_buy) {
             $sendNotification = true;
             $msg .= "Pokadot has reached the value of {$dot}. Your buy value is {$this->dotModel->buy_value} Buy now!";
         }
