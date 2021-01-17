@@ -11,14 +11,14 @@ class SellCrypto extends Command
      *
      * @var string
      */
-    protected $signature = 'command:name';
+    protected $signature = 'crypto:sell';
 
     /**
      * The console command description.
      *
      * @var string
      */
-    protected $description = 'Command description';
+    protected $description = 'Check every minute of specific coin match the sell value in database';
 
     /**
      * Create a new command instance.

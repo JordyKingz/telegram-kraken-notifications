@@ -20,7 +20,7 @@ class CryptoPriceInfo extends Command
      *
      * @var string
      */
-    protected $description = 'Command description';
+    protected $description = 'Get price information of cryptocurrencies';
 
     /**
      * Create a new command instance.
@@ -35,7 +35,7 @@ class CryptoPriceInfo extends Command
     /**
      * Execute the console command.
      *
-     * @return int
+     * @return void
      */
     public function handle()
     {
@@ -54,22 +54,18 @@ class CryptoPriceInfo extends Command
         \Notification::send('update', new CryptoInfoNotification([
             'text' => $msg
         ]));
-
-        // TODO Sell crypto command
-
-        // TODO Buy crypto command
     }
 
     /**
-     * Get Price of BTC in Euro
+     * Get price of $coin in euro
      *
      * @return string
      */
-    public function getPrice($pair)
+    public function getPrice($coin)
     {
         $kraken = new KrakenAPI(env('KRAKEN_API'), env('KRAKEN_SECRET'));
 
-        $res = $kraken->QueryPublic('Ticker', array('pair' => $pair));
+        $res = $kraken->QueryPublic('Ticker', array('pair' => $coin));
         $result = $res['result'];
 
         $price = "0";
