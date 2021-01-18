@@ -213,7 +213,7 @@ class BotController extends Controller
     {
         try {
             $sell ? $model->sell_value = $amount : $model->buy_value = $amount;
-            
+
             $model->notify_sell = true;
             $model->notify_buy = true;
             $model->save();
