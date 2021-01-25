@@ -2,7 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Libraries\KrakenAPI;
+
+use App\Models\Balance;
 use App\Models\Cryptocurrency;
+use App\Models\Order;
 use BotMan\BotMan\BotMan;
 use BotMan\BotMan\BotManFactory;
 use BotMan\BotMan\Drivers\DriverManager;
@@ -30,10 +34,93 @@ class BotController extends Controller
         DriverManager::loadDriver(TelegramDriver::class);
         $botman = BotManFactory::create($config);
 
+        $botman->hears('start_balance {amount}', function (Botman $bot, $amount) {
+            try {
+                Balance::create([
+                    'start' => $amount,
+                    'available' => $amount,
+                ]);
+            } catch (exception $e) {
+                $bot->reply("Failed! Something went wrong creating the balance instance:
+                {$e->getMessage()}.");
+
+                return false;
+            }
+
+            $bot->reply("Set balance: {$amount}");
+        });
+
         // Set buy order
         $botman->hears('buy_order {coin} {amount}', function (Botman $bot, $coin, $amount) {
+            try {
+                // kraken
+                $kraken = new KrakenAPI(env('KRAKEN_API'), env('KRAKEN_SECRET'));
 
-            $bot->reply("buy_order {$coin} {$amount}");
+                // get ETHEUR PRICE
+                $result = $kraken->QueryPublic('Ticker', array('pair' => 'ETHEUR'));
+                $result = $result['result'];
+
+                $ethPrice = "0";
+                foreach ($result as $value) {
+                    $ethPrice = $value['c'][0];
+                }
+                // set sell value
+                $sell_value = $ethPrice * 1.1;
+                // set buy value
+                $automated_sell_value = round($ethPrice / 1.05, 2, PHP_ROUND_HALF_ODD);
+                // calculate volume
+                $volume = $amount / $ethPrice;
+
+                try {
+                    Order::create([
+                        'currency' => $coin,
+                        'amount' => $amount,
+                        'volume' => $volume,
+                        'sell_value' => round($sell_value, 4, PHP_ROUND_HALF_ODD),
+                        'automated_sell_value' => round($automated_sell_value, 4, PHP_ROUND_HALF_ODD)
+                    ]);
+                } catch (exception $e) {
+                    $bot->reply("Failed! Something went wrong creating the Order instance:
+                    {$e->getMessage()}.");
+
+                    return false;
+                }
+
+                $date = date_create();
+                try {
+                    $balance = $kraken->QueryPrivate('Balance');
+                    $balance = json_encode($balance);
+
+                    $bot->reply($balance);
+
+                    $res = $kraken->QueryPrivate('AddOrder', array(
+                        'pair' => 'ETHEUR',
+                        'type' => 'buy',
+                        'ordertype' => 'market',
+                        'oflags' => 'fciq',
+                        'volume' => $volume,
+                        'starttm' => date_timestamp_get($date)
+                    ));
+                    $result = json_encode($res);
+
+                    $bot->reply($result);
+                } catch (exception $e) {
+                    $bot->reply("Failed! Something went wrong placing the order at Kraken
+                    {$e->getMessage()}.");
+
+                    return false;
+                }
+
+                $bot->reply("Success! Buy order set:
+                currency: {$coin}
+                amount: {$amount}
+                volume: {$volume}
+                sell value: {$sell_value}
+                automated sell value {$automated_sell_value}");
+            } catch (exception $e) {
+                $bot->reply("BIG ERROR:
+                {$e->getMessage()}.");
+            }
         });
 
         // Set sell order
