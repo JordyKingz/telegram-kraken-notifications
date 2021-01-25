@@ -30,6 +30,22 @@ class BotController extends Controller
         DriverManager::loadDriver(TelegramDriver::class);
         $botman = BotManFactory::create($config);
 
+        // Set buy order
+        $botman->hears('buy_order {coin} {amount}', function (Botman $bot, $coin, $amount) {
+
+            $bot->reply("buy_order {$coin} {$amount}");
+        });
+
+        // Set sell order
+
+        // Set notification sell order
+
+
+        // Set notification buy order
+
+
+        // Set notification price below % bought amount
+
         // Set buy value
         $botman->hears('Buy {coin} {amount}', function (BotMan $bot, $coin, $amount) {
             if ($coin === $this->btc) {
