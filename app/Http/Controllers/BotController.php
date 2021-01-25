@@ -7,6 +7,7 @@ use App\Libraries\KrakenAPI;
 use App\Models\Balance;
 use App\Models\Cryptocurrency;
 use App\Models\Order;
+use App\Models\Trade;
 use BotMan\BotMan\BotMan;
 use BotMan\BotMan\BotManFactory;
 use BotMan\BotMan\Drivers\DriverManager;
@@ -88,11 +89,6 @@ class BotController extends Controller
 
                 $date = date_create();
                 try {
-                    $balance = $kraken->QueryPrivate('Balance');
-                    $balance = json_encode($balance);
-
-                    $bot->reply($balance);
-
                     $res = $kraken->QueryPrivate('AddOrder', array(
                         'pair' => 'ETHEUR',
                         'type' => 'buy',
@@ -123,211 +119,134 @@ class BotController extends Controller
             }
         });
 
-        // Set sell order
+        // // buy
+        $botman->hears('auto_buy {coin}', function (BotMan $bot, $coin) {
+            // Ethereum
+            $eth = Trade::where('currency', $coin)->first();
+            if ($eth === null) {
+                $return = $this->createTrade($coin, $bot);
 
-        // Set notification sell order
-
-
-        // Set notification buy order
-
-
-        // Set notification price below % bought amount
-
-        // Set buy value
-        $botman->hears('Buy {coin} {amount}', function (BotMan $bot, $coin, $amount) {
-            if ($coin === $this->btc) {
-                // Bitcoin
-                $btc = Cryptocurrency::where('currency', $coin)->first();
-                if ($btc === null) {
-                    $return = $this->createCoin($coin, $amount, $bot);
-
-                    if (!$return) return;
-                } else {
-                    $return = $this->updateCoin($btc, $coin, $amount, $bot);
-
-                    if (!$return) return;
-                }
-            } else if ($coin === $this->eth) {
-                // Ethereum
-                $eth = Cryptocurrency::where('currency', $coin)->first();
-                if ($eth === null) {
-                    $return = $this->createCoin($coin, $amount, $bot);
-
-                    if (!$return) return;
-                } else {
-                    $return = $this->updateCoin($eth, $coin, $amount, $bot);
-
-                    if (!$return) return;
-                }
-            } else if ($coin ===  $this->dot) {
-                // Polkadot
-                $dot = Cryptocurrency::where('currency', $coin)->first();
-                if ($dot === null) {
-                    $return = $this->createCoin($coin, $amount, $bot);
-
-                    if (!$return) return;
-                } else {
-                    $return = $this->updateCoin($dot, $coin, $amount, $bot);
-
-                    if (!$return) return;
-                }
+                if (!$return) return;
             }
 
-            $bot->reply("Success! I have set the buy value of {$coin} at {$amount}.");
+            $bot->reply("Buy order set!");
         });
 
         // Set sell value
-        $botman->hears('Sell {coin} {amount}', function (BotMan $bot, $coin, $amount) {
-            if ($coin === $this->btc) {
-                // Bitcoin
-                $btc = Cryptocurrency::where('currency', $coin)->first();
-                if ($btc === null) {
-                    $return = $this->createCoin($coin, $amount, $bot, true);
-
-                    if (!$return) return;
-                } else {
-                    $return = $this->updateCoin($btc, $coin, $amount, $bot, true);
-
-                    if (!$return) return;
-                }
-            } else if ($coin === $this->eth) {
-                // Ethereum
-                $eth = Cryptocurrency::where('currency', $coin)->first();
-                if ($eth === null) {
-                    $return = $this->createCoin($coin, $amount, $bot, true);
-
-                    if (!$return) return;
-                } else {
-                    $return = $this->updateCoin($eth, $coin, $amount, $bot, true);
-
-                    if (!$return) return;
-                }
-            } else if ($coin ===  $this->dot) {
-                // Polkadot
-                $dot = Cryptocurrency::where('currency', $coin)->first();
-                if ($dot === null) {
-                    $return = $this->createCoin($coin, $amount, $bot, true);
-
-                    if (!$return) return;
-                } else {
-                    $return = $this->updateCoin($dot, $coin, $amount, $bot, true);
-
-                    if (!$return) return;
-                }
-            }
-
-            $bot->reply("Success! I have set the sell value of {$coin} at {$amount}.");
-        });
+//        $botman->hears('Sell {coin} {amount}', function (BotMan $bot, $coin, $amount) {
+//            if ($coin === $this->btc) {
+//                // Bitcoin
+//                $btc = Cryptocurrency::where('currency', $coin)->first();
+//                if ($btc === null) {
+//                    $return = $this->createCoin($coin, $amount, $bot, true);
+//
+//                    if (!$return) return;
+//                } else {
+//                    $return = $this->updateCoin($btc, $coin, $amount, $bot, true);
+//
+//                    if (!$return) return;
+//                }
+//            } else if ($coin === $this->eth) {
+//                // Ethereum
+//                $eth = Cryptocurrency::where('currency', $coin)->first();
+//                if ($eth === null) {
+//                    $return = $this->createCoin($coin, $amount, $bot, true);
+//
+//                    if (!$return) return;
+//                } else {
+//                    $return = $this->updateCoin($eth, $coin, $amount, $bot, true);
+//
+//                    if (!$return) return;
+//                }
+//            } else if ($coin ===  $this->dot) {
+//                // Polkadot
+//                $dot = Cryptocurrency::where('currency', $coin)->first();
+//                if ($dot === null) {
+//                    $return = $this->createCoin($coin, $amount, $bot, true);
+//
+//                    if (!$return) return;
+//                } else {
+//                    $return = $this->updateCoin($dot, $coin, $amount, $bot, true);
+//
+//                    if (!$return) return;
+//                }
+//            }
+//
+//            $bot->reply("Success! I have set the sell value of {$coin} at {$amount}.");
+//        });
 
         // Turn of notification coin
-        $botman->hears('Off {status} {coin}', function (BotMan $bot, $status, $coin) {
-            $updateSuccess = false;
-            if ($coin === $this->btc) {
-                // Bitcoin
-                $btc = Cryptocurrency::where('currency', $coin)->first();
-
-                if ($btc != null) {
-                    if ($status === "sell") {
-                        $btc->notify_sell = false;
-                        $btc->save();
-                        $updateSuccess = true;
-                    } else if ($status === "buy") {
-                        $btc->notify_buy = false;
-                        $btc->save();
-                        $updateSuccess = true;
-                    }
-                }
-            } else if ($coin === $this->eth) {
-                // Ethereum
-                $eth = Cryptocurrency::where('currency', $coin)->first();
-                if ($eth != null) {
-                    if ($status === "sell") {
-                        $eth->notify_sell = false;
-                        $eth->save();
-                        $updateSuccess = true;
-                    } else if ($status === "buy") {
-                        $eth->notify_buy = false;
-                        $eth->save();
-                        $updateSuccess = true;
-                    }
-                }
-            } else if ($coin ===  $this->dot) {
-                // Polkadot
-                $dot = Cryptocurrency::where('currency', $coin)->first();
-                if ($dot != null) {
-                    if ($status === "sell") {
-                        $dot->notify_sell = false;
-                        $dot->save();
-                        $updateSuccess = true;
-                    } else if ($status === "buy") {
-                        $dot->notify_buy = false;
-                        $dot->save();
-                        $updateSuccess = true;
-                    }
-                }
-            }
-
-            if ($updateSuccess) {
-                if ($status === "sell") {
-                    $bot->reply("Success! I have turned off selling notifications for {$coin}");
-                } else if ($status === "buy") {
-                    $bot->reply("Success! I have turned off buying notifications for {$coin}");
-                }
-            } else {
-                $bot->reply("Failed! There are no {$coin} records in the db");
-            }
-        });
+//        $botman->hears('Off {status} {coin}', function (BotMan $bot, $status, $coin) {
+//            $updateSuccess = false;
+//            if ($coin === $this->btc) {
+//                // Bitcoin
+//                $btc = Cryptocurrency::where('currency', $coin)->first();
+//
+//                if ($btc != null) {
+//                    if ($status === "sell") {
+//                        $btc->notify_sell = false;
+//                        $btc->save();
+//                        $updateSuccess = true;
+//                    } else if ($status === "buy") {
+//                        $btc->notify_buy = false;
+//                        $btc->save();
+//                        $updateSuccess = true;
+//                    }
+//                }
+//            } else if ($coin === $this->eth) {
+//                // Ethereum
+//                $eth = Cryptocurrency::where('currency', $coin)->first();
+//                if ($eth != null) {
+//                    if ($status === "sell") {
+//                        $eth->notify_sell = false;
+//                        $eth->save();
+//                        $updateSuccess = true;
+//                    } else if ($status === "buy") {
+//                        $eth->notify_buy = false;
+//                        $eth->save();
+//                        $updateSuccess = true;
+//                    }
+//                }
+//            } else if ($coin ===  $this->dot) {
+//                // Polkadot
+//                $dot = Cryptocurrency::where('currency', $coin)->first();
+//                if ($dot != null) {
+//                    if ($status === "sell") {
+//                        $dot->notify_sell = false;
+//                        $dot->save();
+//                        $updateSuccess = true;
+//                    } else if ($status === "buy") {
+//                        $dot->notify_buy = false;
+//                        $dot->save();
+//                        $updateSuccess = true;
+//                    }
+//                }
+//            }
+//
+//            if ($updateSuccess) {
+//                if ($status === "sell") {
+//                    $bot->reply("Success! I have turned off selling notifications for {$coin}");
+//                } else if ($status === "buy") {
+//                    $bot->reply("Success! I have turned off buying notifications for {$coin}");
+//                }
+//            } else {
+//                $bot->reply("Failed! There are no {$coin} records in the db");
+//            }
+//        });
 
         $botman->listen();
     }
 
-    public function createCoin(string $coin, int $amount, BotMan $bot, bool $sell = false): bool
+    public function createTrade(string $coin, BotMan $bot): bool
     {
         try {
-            if ($sell) {
-                Cryptocurrency::create([
-                    'currency' => $coin,
-                    'sell_value' => $amount,
-                    'notify' => true,
-                    'notify_buy' => true,
-                ]);
-            } else {
-                Cryptocurrency::create([
-                    'currency' => $coin,
-                    'buy_value' => $amount,
-                    'notify_sell' => true,
-                    'notify_buy' => true,
-                ]);
-            }
+            Trade::create([
+                'currency' => $coin,
+            ]);
         }
         catch(exception $e) {
-            $bot->reply("Failed! Something went wrong creating the Cryptocurrency instance:
-                {$e->getMessage()}.
-                Coin: {$coin}
-                Amount: {$amount}"
-            );
-            return false;
-        }
-
-        return true;
-    }
-
-    public function updateCoin(Cryptocurrency $model, string $coin, int $amount, BotMan $bot, bool $sell = false): bool
-    {
-        try {
-            $sell ? $model->sell_value = $amount : $model->buy_value = $amount;
-
-            $model->notify_sell = true;
-            $model->notify_buy = true;
-            $model->save();
-        }
-        catch(exception $e) {
-            $bot->reply("Failed! Something went wrong updating the Cryptocurrency instance:
-                {$e->getMessage()}.
-                Coin: {$coin}
-                Amount: {$amount}"
-            );
-
+            $bot->reply("Failed! Something went wrong creating the Trade instance:
+                {$e->getMessage()}.");
             return false;
         }
 

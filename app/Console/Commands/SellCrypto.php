@@ -2,15 +2,15 @@
 
 namespace App\Console\Commands;
 
-use App\Models\Cryptocurrency;
+use App\Libraries\KrakenAPI;
+
+use App\Models\Order;
 use App\Notifications\CryptoInfoNotification;
 use Illuminate\Console\Command;
 
 class SellCrypto extends Command
 {
-    protected $btcModel;
-    protected $ethModel;
-    protected $dotModel;
+    protected $orderModel;
 
     /**
      * The name and signature of the console command.
@@ -24,7 +24,7 @@ class SellCrypto extends Command
      *
      * @var string
      */
-    protected $description = 'Check every minute of specific coin match the sell value in database';
+    protected $description = 'Check every minute for selling ETH';
 
     /**
      * Create a new command instance.
@@ -34,10 +34,7 @@ class SellCrypto extends Command
     public function __construct()
     {
         parent::__construct();
-
-        $this->btcModel = Cryptocurrency::where('currency', 'btc')->first();
-        $this->ethModel = Cryptocurrency::where('currency', 'eth')->first();
-        $this->dotModel = Cryptocurrency::where('currency', 'dot')->first();
+        $this->orderModel = Order::first();
     }
 
     /**
@@ -47,32 +44,68 @@ class SellCrypto extends Command
      */
     public function handle()
     {
-        $sendNotification = false;
-        // Receive price
-        $btc = (new CryptoPriceInfo)->getPrice('BTCEUR');
-        $eth = (new CryptoPriceInfo)->getPrice('ETHEUR');
-        $dot = (new CryptoPriceInfo)->getPrice('DOTEUR');
+        $kraken = new KrakenAPI(env('KRAKEN_API'), env('KRAKEN_SECRET'));
 
+        $sell = false;
         $msg = "";
-        // Check if price matched
-        if ((int)$btc >= $this->btcModel->sell_value && $this->btcModel->notify_sell) {
-            $sendNotification = true;
-            $msg .= "Bitcoin has reached the value of {$btc}. Your sell value is {$this->btcModel->sell_value} Sell now!";
+        // Check balance
+        $balance = $kraken->QueryPrivate('Balance');
+        $balance = json_encode($balance['result']['XETH']);
+        $balance = (double) $balance;
+        if ($balance > 1) {
+            $sell = true;
         }
 
-        // Check if price matched
-        if ((int)$eth >= $this->ethModel->sell_value && $this->ethModel->notify_sell) {
+        if ($sell) {
+            $eth = (new CryptoPriceInfo)->getPrice('ETHEUR');
             $sendNotification = true;
-            $msg .= "Ethereum has reached the value of {$eth}. Your sell value is {$this->ethModel->sell_value} Sell now!";
+
+            $volume = $this->orderModel->volume; // / 2;
+            // Check if price matched
+            if ((int)$eth >= $this->orderModel->sell_value) {
+                // Sell Ether
+                $res = $kraken->QueryPrivate('AddOrder', array(
+                    'pair' => 'ETHEUR',
+                    'type' => 'sell',
+                    'ordertype' => 'limit,',
+                    'volume' => $volume,
+                ));
+                $result = json_encode($res);
+
+                // Delete order from database;
+                $this->orderModel->delete();
+
+                $sendNotification = true;
+                $msg .= "Congratulations. I have sold your Ethereum, because the sell price matched: {$this->orderModel->sell_value}.";
+                $msg .= "Ethereum is worth {$eth}";
+                $msg .= "Volume sold: {$volume}";
+            } else if ((int)$eth <= $this->orderModel->automated_sell_value) {
+                // Sell Ether
+                $res = $kraken->QueryPrivate('AddOrder', array(
+                    'pair' => 'ETHEUR',
+                    'type' => 'sell',
+                    'ordertype' => 'limit,',
+                    'volume' => $volume,
+                ));
+                $result = json_encode($res);
+
+                // Delete order from database;
+                $this->orderModel->delete();
+
+                $sendNotification = true;
+                $msg .= "I prevented more loss: {$this->orderModel->automated_sell_value}";
+                $msg .= "Ethereum is worth {$eth}";
+                $msg .= "Volume sold: {$volume}";
+                $msg .= $result;
+            } else {
+                $sendNotification = true;
+                $msg .= "Nothing to do.. ETH value: {$eth}";
+                $msg .= "Sell Value: {$this->orderModel->sell_value}";
+                $msg .= "Automated sell Value: {$this->orderModel->automated_sell_value}";
+                $msg .= "Volume that wil be sold: {$volume}";
+            }
         }
 
-        // Check if price matched
-        if ((int)$dot >= $this->dotModel->sell_value && $this->dotModel->notify_sell) {
-            $sendNotification = true;
-            $msg .= "Pokadot has reached the value of {$dot}. Your sell value is {$this->dotModel->sell_value} Sell now!";
-        }
-
-        // Only send message when the price matched sell value
         if ($sendNotification) {
             // Notify User
             \Notification::send('update', new CryptoInfoNotification([
