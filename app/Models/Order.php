@@ -18,7 +18,7 @@ class Order extends Model
         'currency',
         'amount',
         'volume',
-        'sell_value',
-        'automated_sell_value',
+        'sell_value_high',
+        'sell_value_low',
     ];
 }
