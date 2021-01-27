@@ -34,7 +34,7 @@ class BotController extends Controller
         $botman = BotManFactory::create($config);
 
         // Set buy order
-        $botman->hears('buy_order {coin} {amount}', function (Botman $bot, $coin, $amount) {
+        $botman->hears('buy_order {coin} {value} {range}', function (Botman $bot, $coin, $value, $range) {
             try {
                 // kraken
                 $kraken = new KrakenAPI(env('KRAKEN_API'), env('KRAKEN_SECRET'));
@@ -44,20 +44,20 @@ class BotController extends Controller
                 $result = $result['result'];
 
                 $ethPrice = "0";
-                foreach ($result as $value) {
-                    $ethPrice = $value['c'][0];
+                foreach ($result as $res) {
+                    $ethPrice = $res['c'][0];
                 }
                 // set sell value
-                $sell_high = $ethPrice + 70; // make this $variable
+                $sell_high = $ethPrice + (int)$range; // make this $variable
                 // set sell low 3.5%
                 $sell_low = round($ethPrice / 1.035, 2, PHP_ROUND_HALF_ODD);
                 // calculate volume
-                $volume = $amount / $ethPrice;
+                $volume = $value / $ethPrice;
 
                 try {
                     Order::create([
                         'currency' => $coin,
-                        'amount' => $amount,
+                        'amount' => $value,
                         'volume' => $volume,
                         'sell_value_high' => round($sell_high, 4, PHP_ROUND_HALF_ODD),
                         'sell_value_low' => round($sell_low, 4, PHP_ROUND_HALF_ODD)

@@ -126,7 +126,7 @@ class CheckOrder extends Command
     {
         $etherPrice = $this->getPrice('ETHEUR');
 
-        $sell_high = $etherPrice + 70; // make this $value
+        $sell_high = $etherPrice + 60; // make this $value
         $etherPrice = (int)$etherPrice;
         $etherPrice += 1; // higher the price for buying
         // set buy value low - 3.5%
@@ -145,7 +145,7 @@ class CheckOrder extends Command
     {
         $etherPrice = $this->getPrice('ETHEUR');
 
-        $sell_high = $etherPrice + 100; // make this $variable
+        $sell_high = $etherPrice + 60; // make this $variable
         $etherPrice = (int)$etherPrice;
         $etherPrice += 1; // higher the price for buying
         // set buy value -7.5%
