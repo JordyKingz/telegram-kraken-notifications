@@ -73,10 +73,6 @@ class CheckOrder extends Command
 
                 $this->sellVolume($sellVolume, $newBuyOrderProfit, $newBuyOrderLoss);
             }
-        } else {
-            Notification::send('update', new CryptoInfoNotification([
-                'text' => 'No buy order in database'
-            ]));
         }
     }
 
