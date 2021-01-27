@@ -26,7 +26,7 @@ class OrderFactory extends Factory
             'currency' => 'eth',
             'amount' => 100,
             'volume' => 0.09912,
-            'sell_value_high' => 1068,
+            'sell_value_high' => 1058,
             'sell_value_low' => 1000,
         ];
     }

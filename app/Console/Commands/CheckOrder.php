@@ -46,7 +46,7 @@ class CheckOrder extends Command
     {
         if ($this->orderModel->count() > 0) {
             // Receive price
-            $etherPrice = (new CryptoPriceInfo)->getPrice('ETHEUR');
+            $etherPrice = $this->getPrice('ETHEUR');
             $sellVolume = 0;
             $newBuyOrderProfit = false;
             $newBuyOrderLoss = false;
@@ -65,12 +65,14 @@ class CheckOrder extends Command
                 }
             }
 
-            if ($newBuyOrderProfit) {
-                // remove 5% from sell volume to keep in account
-                $sellVolume = $sellVolume / 1.05;
-            }
+            if ($sellVolume > 0) {
+                if ($newBuyOrderProfit) {
+                    // remove 5% from sell volume to keep in account
+                    $sellVolume = $sellVolume / 1.05;
+                }
 
-            $this->sellVolume($sellVolume, $newBuyOrderProfit, $newBuyOrderLoss);
+                $this->sellVolume($sellVolume, $newBuyOrderProfit, $newBuyOrderLoss);
+            }
         } else {
             Notification::send('update', new CryptoInfoNotification([
                 'text' => 'No buy order in database'
@@ -85,20 +87,22 @@ class CheckOrder extends Command
      */
     public function sellVolume($volume, $newBuyOrder, $newSellOrder)
     {
-        try {
-//            $kraken = new KrakenAPI(env('KRAKEN_API'), env('KRAKEN_SECRET'));
-//            $kraken->QueryPrivate("AddOrder', array(
-//            'pair' => 'ETHEUR',
-//            'type' => 'sell',
-//            'ordertype' => 'limit,',
-//            'volume' => $volume,
-//        ));
-        } catch (exception $e) {
-            Notification::send('update', new CryptoInfoNotification([
-                'text' => "Failed to sell order at kraken. Volume: {$volume}
-                error: {$e->getMessage()}"
-            ]));
-        }
+        $kraken = new KrakenAPI(env('KRAKEN_API'), env('KRAKEN_SECRET'));
+        $etherPrice = $this->getPrice('ETHEUR');
+
+        $etherPrice = (int)etherPrice - 1; // sell price
+        $res = $kraken->QueryPrivate('AddOrder', array(
+            'pair' => 'ETHEUR',
+            'type' => 'sell',
+            'ordertype' => 'limit',
+            'price' => $etherPrice,
+            'volume' => $volume
+        ));
+
+        $res = json_encode($res);
+        Notification::send('update', new CryptoInfoNotification([
+            'text' => "Sell volume at kraken: {$res}. {$volume} . {$etherPrice}"
+        ]));
 
         if ($newBuyOrder) {
             // You've sold your ETH volume with profit
@@ -120,7 +124,7 @@ class CheckOrder extends Command
      */
     public function buyOrderHigh($volume, $profit)
     {
-        $etherPrice = (new CryptoPriceInfo)->getPrice('ETHEUR');
+        $etherPrice = $this->getPrice('ETHEUR');
 
         $sell_high = $etherPrice + 70; // make this $value
         $etherPrice = (int)$etherPrice;
@@ -139,7 +143,7 @@ class CheckOrder extends Command
      */
     public function buyOrderLow($volume, $profit)
     {
-        $etherPrice = (new CryptoPriceInfo)->getPrice('ETHEUR');
+        $etherPrice = $this->getPrice('ETHEUR');
 
         $sell_high = $etherPrice + 100; // make this $variable
         $etherPrice = (int)$etherPrice;
@@ -176,26 +180,23 @@ class CheckOrder extends Command
 
         // place new order
         $date = date_create();
-        try {
-            $kraken = new KrakenAPI(env('KRAKEN_API'), env('KRAKEN_SECRET'));
-//            $kraken->QueryPrivate('AddOrder', array(
-//                'pair' => 'ETHEUR',
-//                'type' => 'buy',
-//                'ordertype' => 'market',
-//                'oflags' => 'fciq',
-//                'volume' => $volume,
-//                'starttm' => date_timestamp_get($date)
-//            ));
-        } catch (exception $e) {
-            Notification::send('update', new CryptoInfoNotification([
-                'text' => "Failed to place order.
-                {$e->getMessage()}"
-            ]));
 
-            return;
-        }
+        $kraken = new KrakenAPI(env('KRAKEN_API'), env('KRAKEN_SECRET'));
+        $res = $kraken->QueryPrivate('AddOrder', array(
+            'pair' => 'ETHEUR',
+            'type' => 'buy',
+            'ordertype' => 'market',
+            'oflags' => 'fciq',
+            'volume' => $volume,
+            'starttm' => date_timestamp_get($date)
+        ));
 
-        $etherPrice = (new CryptoPriceInfo)->getPrice('ETHEUR');
+        $res = json_encode($res);
+        Notification::send('update', new CryptoInfoNotification([
+            'text' => "Buy new volume at Kraken: {$res}"
+        ]));
+
+        $etherPrice = $this->getPrice('ETHEUR');
         $value = (int)$etherPrice * $volume;
 
         if ($profit) {
@@ -251,6 +252,27 @@ class CheckOrder extends Command
         Notification::send('update', new CryptoInfoNotification([
             'text' => $msg
         ]));
+    }
+
+    /**
+     * Get price of $coin in euro
+     *
+     * @return string
+     */
+    public function getPrice($coin)
+    {
+        $kraken = new KrakenAPI(env('KRAKEN_API'), env('KRAKEN_SECRET'));
+
+        $res = $kraken->QueryPublic('Ticker', array('pair' => $coin));
+        $result = $res['result'];
+
+        $price = "0";
+        foreach($result as $value)
+        {
+            $price = $value['c'][0];
+        }
+
+        return $price;
     }
 }
 

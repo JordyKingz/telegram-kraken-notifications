@@ -4,8 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Libraries\KrakenAPI;
 
-use App\Models\Balance;
-use App\Models\Cryptocurrency;
 use App\Models\Order;
 use App\Models\Trade;
 use BotMan\BotMan\BotMan;
@@ -73,14 +71,14 @@ class BotController extends Controller
 
                 $date = date_create();
                 try {
-//                    $kraken->QueryPrivate('AddOrder', array(
-//                        'pair' => 'ETHEUR',
-//                        'type' => 'buy',
-//                        'ordertype' => 'market',
-//                        'oflags' => 'fciq',
-//                        'volume' => $volume,
-//                        'starttm' => date_timestamp_get($date)
-//                    ));
+                    $kraken->QueryPrivate('AddOrder', array(
+                        'pair' => 'ETHEUR',
+                        'type' => 'buy',
+                        'ordertype' => 'market',
+                        'oflags' => 'fciq',
+                        'volume' => $volume,
+                        'starttm' => date_timestamp_get($date)
+                    ));
                 } catch (exception $e) {
                     $bot->reply("Failed! Something went wrong placing the order at Kraken");
                     $bot->reply("Failed! Something went wrong placing the order at Kraken
