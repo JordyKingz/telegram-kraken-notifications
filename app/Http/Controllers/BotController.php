@@ -14,9 +14,7 @@ use PHPUnit\Util\Exception;
 
 class BotController extends Controller
 {
-    protected $btc = "btc";
     protected $eth = "eth";
-    protected $dot = "dot";
 
     /**
      * Handle user conversation.
@@ -34,7 +32,7 @@ class BotController extends Controller
         $botman = BotManFactory::create($config);
 
         // Set buy order
-        $botman->hears('buy_order {coin} {value} {range}', function (Botman $bot, $coin, $value, $range) {
+        $botman->hears('buy_order {coin} {value} {set_sell_high}', function (Botman $bot, $coin, $value, $set_sell_high) {
             try {
                 // kraken
                 $kraken = new KrakenAPI(env('KRAKEN_API'), env('KRAKEN_SECRET'));
@@ -48,11 +46,24 @@ class BotController extends Controller
                     $ethPrice = $res['c'][0];
                 }
                 // set sell value
-                $sell_high = $ethPrice + (int)$range; // make this $variable
+                $sell_high = $ethPrice + (int)$set_sell_high;
                 // set sell low 3.5%
                 $sell_low = round($ethPrice / 1.035, 2, PHP_ROUND_HALF_ODD);
                 // calculate volume
                 $volume = $value / $ethPrice;
+
+                $date = date_create();
+                $res = $kraken->QueryPrivate('AddOrder', array(
+                    'pair' => 'ETHEUR',
+                    'type' => 'buy',
+                    'ordertype' => 'market',
+                    'oflags' => 'fciq',
+                    'volume' => $volume,
+                    'starttm' => date_timestamp_get($date)
+                ));
+                $res = json_encode($res);
+
+                $bot->reply("Order at Kraken: {$res}");
 
                 try {
                     Order::create([
@@ -68,36 +79,18 @@ class BotController extends Controller
 
                     return false;
                 }
-
-                $date = date_create();
-                try {
-                    $kraken->QueryPrivate('AddOrder', array(
-                        'pair' => 'ETHEUR',
-                        'type' => 'buy',
-                        'ordertype' => 'market',
-                        'oflags' => 'fciq',
-                        'volume' => $volume,
-                        'starttm' => date_timestamp_get($date)
-                    ));
-                } catch (exception $e) {
-                    $bot->reply("Failed! Something went wrong placing the order at Kraken");
-                    $bot->reply("Failed! Something went wrong placing the order at Kraken
-                    {$e->getMessage()}.");
-
-                    return;
-                }
-
-                $bot->reply("
-                Order information:
-                Amount: {$amount}
-                Volume: {$volume}
-                Sell high: {$sell_high}
-                Sell low: {$sell_low}
-                ");
             } catch (exception $e) {
                 $bot->reply("BIG ERROR:
                 {$e->getMessage()}.");
             }
+
+            $bot->reply("
+                Order information:
+                Amount: {$value}
+                Volume: {$volume}
+                Sell high: {$sell_high}
+                Sell low: {$sell_low}
+            ");
         });
 
         $botman->hears('cancel_all_orders', function (Botman $bot) {
