@@ -86,7 +86,7 @@ class CheckOrder extends Command
         $kraken = new KrakenAPI(env('KRAKEN_API'), env('KRAKEN_SECRET'));
         $etherPrice = $this->getPrice('ETHEUR');
 
-        $etherPrice = (int)etherPrice - 1; // sell price
+        $etherPrice = (int)$etherPrice - 1; // sell price
         $res = $kraken->QueryPrivate('AddOrder', array(
             'pair' => 'ETHEUR',
             'type' => 'sell',
