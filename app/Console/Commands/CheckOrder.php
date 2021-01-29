@@ -155,7 +155,7 @@ class CheckOrder extends Command
         // set buy value -5.5%
         $sell_low = round($etherPrice / 1.055, 2, PHP_ROUND_HALF_ODD);
 
-        $this->createOrder$etherPrice, $sell_high, $sell_low, $profit, $amount);
+        $this->createOrder($etherPrice, $sell_high, $sell_low, $profit, $amount);
     }
 
     /**

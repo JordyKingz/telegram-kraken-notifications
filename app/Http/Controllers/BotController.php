@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Libraries\KrakenAPI;
 
+use App\Models\HighValue;
 use App\Models\Order;
 use App\Models\Trade;
 use BotMan\BotMan\BotMan;
@@ -65,23 +66,24 @@ class BotController extends Controller
 
                 $bot->reply("Order at Kraken: {$res}");
 
-                try {
-                    Order::create([
-                        'currency' => $coin,
-                        'amount' => $value,
-                        'volume' => $volume,
-                        'sell_value_high' => round($sell_high, 4, PHP_ROUND_HALF_ODD),
-                        'sell_value_low' => round($sell_low, 4, PHP_ROUND_HALF_ODD)
-                    ]);
+                $order = Order::create([
+                    'currency' => $coin,
+                    'amount' => $value,
+                    'volume' => $volume,
+                    'sell_value_high' => round($sell_high, 4, PHP_ROUND_HALF_ODD),
+                    'sell_value_low' => round($sell_low, 4, PHP_ROUND_HALF_ODD)
+                ]);
 
-                    HighOrder::create([
-                        'high_value' => $set_sell_high
-                    ]);
-                } catch (exception $e) {
-                    $bot->reply("Failed! Something went wrong creating the Order instance:
-                    {$e->getMessage()}.");
+                if ($order === null) {
+                    $bot->reply("Failed! Something went wrong creating the Order instance:");
+                }
 
-                    return false;
+                $highValue = HighValue::create([
+                    'high_value' => $set_sell_high
+                ]);
+
+                if ($highValue === null) {
+                    $bot->reply("Failed! Something went wrong creating the HighValue instance:");
                 }
             } catch (exception $e) {
                 $bot->reply("BIG ERROR:
