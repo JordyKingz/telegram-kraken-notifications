@@ -2,17 +2,17 @@
 
 namespace Database\Factories;
 
-use App\Models\Order;
+use App\Models\HighValue;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
-class OrderFactory extends Factory
+class HighValueFactory extends Factory
 {
     /**
      * The name of the factory's corresponding model.
      *
      * @var string
      */
-    protected $model = Order::class;
+    protected $model = HighValue::class;
 
     /**
      * Define the model's default state.
@@ -22,11 +22,7 @@ class OrderFactory extends Factory
     public function definition()
     {
         return [
-            'currency' => 'eth',
-            'amount' => 100,
-            'volume' => 0.09912,
-            'sell_high' => 1058,
-            'sell_low' => 1000,
+            'high_value' => 35
         ];
     }
 }
