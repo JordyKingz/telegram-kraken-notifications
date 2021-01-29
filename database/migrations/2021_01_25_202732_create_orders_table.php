@@ -18,8 +18,8 @@ class CreateOrdersTable extends Migration
             $table->string('currency');
             $table->decimal('amount', $precision = 15, $scale = 4)->nullable();
             $table->decimal('volume', $precision = 15, $scale = 4)->nullable();
-            $table->decimal('sell_value_high', $precision = 15, $scale = 4)->nullable();
-            $table->decimal('sell_value_low', $precision = 15, $scale = 4)->nullable();
+            $table->decimal('sell_high', $precision = 15, $scale = 4)->nullable();
+            $table->decimal('sell_low', $precision = 15, $scale = 4)->nullable();
             $table->timestamps();
         });
     }

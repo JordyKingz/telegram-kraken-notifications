@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Libraries\KrakenAPI;
+use App\Models\HighValue;
 use App\Models\Order;
 use App\Notifications\CryptoInfoNotification;
 use Illuminate\Console\Command;
@@ -12,6 +13,7 @@ use PHPUnit\Util\Exception;
 class CheckOrder extends Command
 {
     protected $orderModel;
+    protected $highValue;
     /**
      * The name and signature of the console command.
      *
@@ -35,6 +37,7 @@ class CheckOrder extends Command
     {
         parent::__construct();
         $this->orderModel = Order::all();
+        $this->highValue = HighValue::first();
     }
 
     /**
@@ -101,6 +104,8 @@ class CheckOrder extends Command
         ]));
 
         if ($newBuyOrder) {
+            // set buy volume back to first buy
+            $volume *= 1.05;
             // You've sold your ETH volume with profit
             // set new Order with new ETH price
             $this->buyOrderHigh($volume, true);
@@ -122,9 +127,9 @@ class CheckOrder extends Command
     {
         $etherPrice = $this->getPrice('ETHEUR');
 
-        $sell_high = $etherPrice + 60; // make this $value
+        $sell_high = $etherPrice + $this->highValue->high_value;
         $etherPrice = (int)$etherPrice;
-        $etherPrice += 1; // higher the price for buying
+        $etherPrice += 0.15; // higher the price for buying
         // set buy value low - 3.5%
         $sell_low = round($etherPrice / 1.035, 2, PHP_ROUND_HALF_ODD);
 
@@ -141,11 +146,11 @@ class CheckOrder extends Command
     {
         $etherPrice = $this->getPrice('ETHEUR');
 
-        $sell_high = $etherPrice + 60; // make this $variable
+        $sell_high = $etherPrice + $this->highValue->high_value;
         $etherPrice = (int)$etherPrice;
-        $etherPrice += 1; // higher the price for buying
-        // set buy value -7.5%
-        $sell_low = round($etherPrice / 1.075, 2, PHP_ROUND_HALF_ODD);
+        $etherPrice += 0.15; // higher the price for buying
+        // set buy value -5.5%
+        $sell_low = round($etherPrice / 1.055, 2, PHP_ROUND_HALF_ODD);
 
         $this->createOrder($volume, $etherPrice, $sell_high, $sell_low, $profit);
     }
@@ -162,8 +167,8 @@ class CheckOrder extends Command
                 'currency' => 'eth',
                 'amount' => (int)$etherPrice,
                 'volume' => $volume,
-                'sell_value_high' => round($sell_high, 4, PHP_ROUND_HALF_ODD),
-                'sell_value_low' => round($sell_low, 4, PHP_ROUND_HALF_ODD)
+                'sell_high' => round($sell_high, 4, PHP_ROUND_HALF_ODD),
+                'sell_low' => round($sell_low, 4, PHP_ROUND_HALF_ODD)
             ]);
         } catch (exception $e) {
             Notification::send('update', new CryptoInfoNotification([

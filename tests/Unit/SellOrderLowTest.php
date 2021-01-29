@@ -5,7 +5,6 @@ namespace Tests\Unit;
 use App\Libraries\KrakenAPI;
 use App\Models\Order;
 use PHPUnit\Framework\TestCase;
-use Symfony\Contracts\EventDispatcher\Event;
 
 class SellOrderLowTest extends TestCase
 {

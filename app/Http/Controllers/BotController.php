@@ -73,6 +73,10 @@ class BotController extends Controller
                         'sell_value_high' => round($sell_high, 4, PHP_ROUND_HALF_ODD),
                         'sell_value_low' => round($sell_low, 4, PHP_ROUND_HALF_ODD)
                     ]);
+
+                    HighOrder::create([
+                        'high_value' => $set_sell_high
+                    ]);
                 } catch (exception $e) {
                     $bot->reply("Failed! Something went wrong creating the Order instance:
                     {$e->getMessage()}.");
