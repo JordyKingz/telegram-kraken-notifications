@@ -51,6 +51,7 @@ class CheckOrder extends Command
             // Receive price
             $etherPrice = $this->getPrice('ETHEUR');
             $sellVolume = 0;
+            $amount = 0;
             $newBuyOrderProfit = false;
             $newBuyOrderLoss = false;
 
@@ -61,10 +62,12 @@ class CheckOrder extends Command
                     $newBuyOrderProfit = true;
                     // add bought volume
                     $sellVolume += $order->volume;
+                    $amount += $order->amount;
                 } else if ((int)$etherPrice <= $order->sell_value_low) {
                     $newBuyOrderLoss = true;
                     // add bought volume
                     $sellVolume += $order->volume;
+                    $amount += $order->amount;
                 }
             }
 
@@ -74,7 +77,7 @@ class CheckOrder extends Command
                     $sellVolume = $sellVolume / 1.05;
                 }
 
-                $this->sellVolume($sellVolume, $newBuyOrderProfit, $newBuyOrderLoss);
+                $this->sellVolume($sellVolume, $newBuyOrderProfit, $newBuyOrderLoss, $amount);
             }
         }
     }
@@ -84,7 +87,7 @@ class CheckOrder extends Command
      *
      * @return void
      */
-    public function sellVolume($volume, $newBuyOrder, $newSellOrder)
+    public function sellVolume($volume, $newBuyOrder, $newSellOrder, $amount)
     {
         $kraken = new KrakenAPI(env('KRAKEN_API'), env('KRAKEN_SECRET'));
         $etherPrice = $this->getPrice('ETHEUR');
@@ -108,13 +111,13 @@ class CheckOrder extends Command
             $volume *= 1.05;
             // You've sold your ETH volume with profit
             // set new Order with new ETH price
-            $this->buyOrderHigh($volume, true);
+            $this->buyOrderHigh($amount, true);
         }
 
         if ($newSellOrder) {
             // You've sold your ETH volume with loss
             // set new Order with new ETH price
-            $this->buyOrderLow($volume, false);
+            $this->buyOrderLow($amount, false);
         }
     }
 
@@ -123,7 +126,7 @@ class CheckOrder extends Command
      *
      * @return void
      */
-    public function buyOrderHigh($volume, $profit)
+    public function buyOrderHigh($amount, $profit)
     {
         $etherPrice = $this->getPrice('ETHEUR');
 
@@ -134,7 +137,7 @@ class CheckOrder extends Command
         $sell_low = round($etherPrice / 1.035, 2, PHP_ROUND_HALF_ODD);
 
         // create the order
-        $this->createOrder($volume, $etherPrice, $sell_high, $sell_low, $profit);
+        $this->createOrder($etherPrice, $sell_high, $sell_low, $profit, $amount);
     }
 
     /**
@@ -142,7 +145,7 @@ class CheckOrder extends Command
      * Instant buy
      * @return void
      */
-    public function buyOrderLow($volume, $profit)
+    public function buyOrderLow($amount, $profit)
     {
         $etherPrice = $this->getPrice('ETHEUR');
 
@@ -152,7 +155,7 @@ class CheckOrder extends Command
         // set buy value -5.5%
         $sell_low = round($etherPrice / 1.055, 2, PHP_ROUND_HALF_ODD);
 
-        $this->createOrder($volume, $etherPrice, $sell_high, $sell_low, $profit);
+        $this->createOrder$etherPrice, $sell_high, $sell_low, $profit, $amount);
     }
 
     /**
@@ -161,11 +164,13 @@ class CheckOrder extends Command
      * Notify
      * @return void
      */
-    public function createOrder($volume, $etherPrice, $sell_high, $sell_low, $profit) {
+    public function createOrder($etherPrice, $sell_high, $sell_low, $profit, $amount) {
         try {
+            $volume = $amount / $etherPrice;
+
             Order::create([
                 'currency' => 'eth',
-                'amount' => (int)$etherPrice,
+                'amount' => $amount,
                 'volume' => $volume,
                 'sell_high' => round($sell_high, 4, PHP_ROUND_HALF_ODD),
                 'sell_low' => round($sell_low, 4, PHP_ROUND_HALF_ODD)
