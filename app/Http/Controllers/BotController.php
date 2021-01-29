@@ -33,7 +33,7 @@ class BotController extends Controller
         $botman = BotManFactory::create($config);
 
         // Set buy order
-        $botman->hears('buy_order {coin} {value} {set_sell_high}', function (Botman $bot, $coin, $value, $set_sell_high) {
+       /* $botman->hears('buy_order {coin} {value} {set_sell_high}', function (Botman $bot, $coin, $value, $set_sell_high) {
             try {
                 // kraken
                 $kraken = new KrakenAPI(env('KRAKEN_API'), env('KRAKEN_SECRET'));
@@ -98,6 +98,7 @@ class BotController extends Controller
                 Sell low: {$sell_low}
             ");
         });
+       */
 
         $botman->hears('cancel_all_orders', function (Botman $bot) {
             Order::truncate();
