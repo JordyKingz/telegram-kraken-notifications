@@ -103,7 +103,6 @@ class BotController extends Controller
             ");
         });
 
-
         $botman->hears('cancel_all_orders', function (Botman $bot) {
             Order::truncate();
 
@@ -118,8 +117,8 @@ class BotController extends Controller
                 foreach($orders as $order) {
                     $msg .= "
                     Volume: {$order->volume}
-                    Sell high: {$order->sell_value_high}
-                    Sell low: {$order->sell_value_low}";
+                    Sell high: {$order->sell_high}
+                    Sell low: {$order->sell_low}";
                 }
 
                 $bot->reply($msg);
