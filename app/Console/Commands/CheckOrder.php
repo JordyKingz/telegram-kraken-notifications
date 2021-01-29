@@ -40,6 +40,7 @@ class CheckOrder extends Command
         $this->highValue = HighValue::first();
     }
 
+
     /**
      * Execute the console command.
      *

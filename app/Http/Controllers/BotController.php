@@ -33,7 +33,7 @@ class BotController extends Controller
         $botman = BotManFactory::create($config);
 
         // Set buy order
-       /* $botman->hears('buy_order {coin} {value} {set_sell_high}', function (Botman $bot, $coin, $value, $set_sell_high) {
+        $botman->hears('buy_order {coin} {value} {set_sell_high}', function (Botman $bot, $coin, $value, $set_sell_high) {
             try {
                 // kraken
                 $kraken = new KrakenAPI(env('KRAKEN_API'), env('KRAKEN_SECRET'));
@@ -66,24 +66,26 @@ class BotController extends Controller
 
                 $bot->reply("Order at Kraken: {$res}");
 
-                $order = Order::create([
-                    'currency' => $coin,
-                    'amount' => $value,
-                    'volume' => $volume,
-                    'sell_value_high' => round($sell_high, 4, PHP_ROUND_HALF_ODD),
-                    'sell_value_low' => round($sell_low, 4, PHP_ROUND_HALF_ODD)
-                ]);
-
-                if ($order === null) {
-                    $bot->reply("Failed! Something went wrong creating the Order instance:");
+                try {
+                    Order::create([
+                        'currency' => $coin,
+                        'amount' => $value,
+                        'volume' => $volume,
+                        'sell_high' => round($sell_high, 4, PHP_ROUND_HALF_ODD),
+                        'sell_low' => round($sell_low, 4, PHP_ROUND_HALF_ODD)
+                    ]);
+                } catch (exception $e) {
+                    $bot->reply("Failed! Something went wrong creating the Order instance:
+                    {$e->getMessage()}.");
                 }
 
-                $highValue = HighValue::create([
-                    'high_value' => $set_sell_high
-                ]);
-
-                if ($highValue === null) {
-                    $bot->reply("Failed! Something went wrong creating the HighValue instance:");
+                try {
+                    HighValue::create([
+                        'high_value' => (int)$set_sell_high
+                    ]);
+                } catch (exception $e) {
+                    $bot->reply("Failed! Something went wrong creating the HighValue instance:
+                    {$e->getMessage()}.");
                 }
             } catch (exception $e) {
                 $bot->reply("BIG ERROR:
@@ -98,7 +100,7 @@ class BotController extends Controller
                 Sell low: {$sell_low}
             ");
         });
-       */
+
 
         $botman->hears('cancel_all_orders', function (Botman $bot) {
             Order::truncate();
