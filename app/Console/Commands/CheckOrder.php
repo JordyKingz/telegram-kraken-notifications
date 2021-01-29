@@ -57,14 +57,14 @@ class CheckOrder extends Command
             $newBuyOrderLoss = false;
 
             foreach ($this->orderModel as $order) {
-                if ((int)$etherPrice > $order->sell_value_high) {
+                if ((int)$etherPrice > $order->sell_high) {
                     // Value sold based on profit
                     // set new buy order
                     $newBuyOrderProfit = true;
                     // add bought volume
                     $sellVolume += $order->volume;
                     $amount += $order->amount;
-                } else if ((int)$etherPrice <= $order->sell_value_low) {
+                } else if ((int)$etherPrice <= $order->sell_low) {
                     $newBuyOrderLoss = true;
                     // add bought volume
                     $sellVolume += $order->volume;
@@ -250,8 +250,8 @@ class CheckOrder extends Command
                 $msg .= "
                 Order in database:
                 Volume: {$order->volume}
-                Sell high: {$order->sell_value_high}
-                Sell low: {$order->sell_value_low}
+                Sell high: {$order->sell_high}
+                Sell low: {$order->sell_low}
                 ";
             }
         }
