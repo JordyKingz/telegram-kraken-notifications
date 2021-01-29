@@ -42,7 +42,7 @@ class BotController extends Controller
                 $result = $kraken->QueryPublic('Ticker', array('pair' => 'ETHEUR'));
                 $result = $result['result'];
 
-                $ethPrice = "0";
+                $ethPrice = 0;
                 foreach ($result as $res) {
                     $ethPrice = $res['c'][0];
                 }
@@ -67,13 +67,15 @@ class BotController extends Controller
                 $bot->reply("Order at Kraken: {$res}");
 
                 try {
-                    Order::create([
+                    $order = Order::create([
                         'currency' => $coin,
                         'amount' => $value,
                         'volume' => $volume,
                         'sell_high' => round($sell_high, 4, PHP_ROUND_HALF_ODD),
                         'sell_low' => round($sell_low, 4, PHP_ROUND_HALF_ODD)
                     ]);
+                    $order = json_encode($order);
+                    $bot->reply($order);
                 } catch (exception $e) {
                     $bot->reply("Failed! Something went wrong creating the Order instance:
                     {$e->getMessage()}.");
